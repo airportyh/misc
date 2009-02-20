@@ -1,0 +1,40 @@
+<html>
+<head><title>jQuery Style Examples</title>
+<link type="text/css" rel="stylesheet" href="../lib/jspec.css" />
+<script type="text/javascript" src="jquery.js"></script>
+<script type="text/javascript" src="jquery.bdd.js"></script>
+<script type="text/javascript">
+function Bowling(){
+	this.score = 0;
+}
+Bowling.prototype.hit = function(n){
+	this.score += n;
+}
+
+$(function(){
+	$.describe('Bowling')
+		.beforeEach(function(){
+			this.bowling = new Bowling();
+		})
+		.should('should score 0 for gutter game', function(){
+			for (var i = 0; i < 20; i++) this.bowling.hit(0);
+			this.bowling.score.shouldEqual(0);
+		})
+		.should('should accumulate score', function(){
+			this.bowling.hit(20);
+			this.bowling.hit(10);
+			this.bowling.score.shouldEqual(30);
+		});
+		
+		
+	$.specOutput = function(s){
+		$('#log').append(s + '\n');
+	}
+	$.runSpecs();
+});
+</script>
+</head>
+<body>
+<pre id="log"></pre>
+</body>
+</html>

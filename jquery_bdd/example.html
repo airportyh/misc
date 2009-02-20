@@ -1,0 +1,32 @@
+<html>
+<head><title>jQuery Style Examples</title>
+<link type="text/css" rel="stylesheet" href="../lib/jspec.css" />
+<script type="text/javascript" src="jquery.js"></script>
+<script type="text/javascript" src="jquery.bdd.js"></script>
+<script type="text/javascript">
+Array.prototype.remove = function(i){
+	return this.splice(i, 1);
+}
+
+$(function(){
+	$.describe('array method .remove')
+		.beforeEach(function(){
+			this.array = ['a', 'b', 'c'];
+		})
+		.should('remove single elements', function(){
+			this.array.remove(0).length.shouldEqual(2);
+		})
+		.should('remove multiple elements', function(){
+			this.array.remove(0, 1).length.shouldEqual(1);
+		})
+	$.specOutput = function(s){
+		$('#log').append(s + '\n');
+	}
+	$.runSpecs();
+});
+</script>
+</head>
+<body>
+<pre id="log"></pre>
+</body>
+</html>
