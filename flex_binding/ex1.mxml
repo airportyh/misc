@@ -5,7 +5,7 @@
     <List id="stateList" labelField="abrv">
         <ArrayCollection>
             <Object abrv="NJ" full="New Jersey"/>
-            <Object abrv="MA" full="Massesstusses"/>
+            <Object abrv="MA" full="Massachusetts"/>
             <Object abrv="NY" full="NY"/>
             <Object abrv="NC" full="NC"/>
         </ArrayCollection>
