@@ -6,8 +6,8 @@
         <ArrayCollection>
             <Object abrv="NJ" full="New Jersey"/>
             <Object abrv="MA" full="Massachusetts"/>
-            <Object abrv="NY" full="NY"/>
-            <Object abrv="NC" full="NC"/>
+            <Object abrv="NY" full="New York"/>
+            <Object abrv="NC" full="North Carolina"/>
         </ArrayCollection>
     </List>
     <Text text="{stateList.selectedItem.full}"/>
