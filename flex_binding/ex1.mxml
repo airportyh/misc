@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Application
+    xmlns="http://www.adobe.com/2006/mxml" 
+>
+    <List id="stateList" labelField="abrv">
+        <ArrayCollection>
+            <Object abrv="NJ" full="New Jersey"/>
+            <Object abrv="MA" full="Massesstusses"/>
+            <Object abrv="NY" full="NY"/>
+            <Object abrv="NC" full="NC"/>
+        </ArrayCollection>
+    </List>
+    <Text text="{stateList.selectedItem.full}"/>
+</Application>
