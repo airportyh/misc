@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Application
+    xmlns="http://www.adobe.com/2006/mxml"
+    creationComplete="init()"
+>
+    <Script>
+    [Bindable]
+    public var currentPage:Page = new Page(0, 10, 100);
+    </Script>
+    <HBox>
+    <Button label="Previous" click="currentPage.prev()" enabled="{currentPage.hasPrev}"/>
+    <Label text="{currentPage.from} to {currentPage.to}"/>
+    <Button label="Next" click="currentPage.next()" enabled="{currentPage.hasNext}"/>
+    </HBox>
+</Application>
