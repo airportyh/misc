@@ -28,7 +28,6 @@ package{
         }
         
         private function fireChanges(){
-            
             var toFire = ['from', 'to', 'hasNext', 'hasPrev'];
             for (var i = 0; i < toFire.length; i++)
                 this.dispatchEvent(new PropertyChangeEvent(
