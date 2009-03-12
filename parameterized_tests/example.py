@@ -8,9 +8,7 @@ class TestUserPage(browsertest.BrowserTest):
     def testFrontPage(self):
         print("testing front page on %s" % self.browser)
         
-#browsertest.expand_browsers(globals())
-
-TestCustomerPageOnFirefox = type('TestCustomerPageOnFireFox', (TestCustomerPage,), dict(browser='firefox'))
+browsertest.expand_browsers(globals())
 
 if __name__ == '__main__':
     import unittest
