@@ -37,13 +37,13 @@ $.runSpec = function(spec){
 	var failures = 0;
 	if (spec.beforeAll) spec.beforeAll();
 	for (var caseName in spec.tests){
-        var sp = spec.clone
+        var sp = spec.clone;
+        var context = {};
 		var testCase = spec.tests[caseName];
-        if (testCase.ishelper) continue;
 		try{
-			if (spec.beforeEach) spec.beforeEach();
-			testCase.apply(spec);
-			if (spec.afterEach) spec.afterEach();
+			if (spec.beforeEach) spec.beforeEach.apply(context);
+			testCase.apply(context);
+			if (spec.afterEach) spec.afterEach.apply(context);
 		}catch(e){
             with({print: $.specOutput}){
                 print(spec.name + ' ' + caseName + ':');
@@ -56,25 +56,37 @@ $.runSpec = function(spec){
 	if (spec.afterAll) spec.afterAll();
 	return {total: totalRan, fail: failures};
 }
-$.setupShouldHelpers = function(){
-    Number.prototype.shouldEqual = function(other){
-        if (this != other) throw new Error(this + " is not equal to " + other + ". Called by " + arguments.caller);
-    }
-    Number.prototype.shouldEqual.ishelper = true;
-    Date.prototype.shouldEqual = function(other){
-        if (this.getTime() != other.getTime()) throw new Error(this + ' is not equal to ' + other);
-    }
-    Date.prototype.shouldEqual.ishelper = true;
+$.test = function(one){
+    return {
+        shouldEqual: function(other){
+            if ((one && one.constructor == Date) && (other && other.constructor == Date)){
+                one = one.getTime();
+                other = other.getTime();
+            }
+            if ((one && one.constructor == Array) && (other && other.constructor == Array)){
+                if (one.length != other.length) throw new Error(one + " is not equal to " + other);
+                for (var i = 0; i < one.length; i++)
+                    if (one[i] != other[i])
+                        throw new Error(one + " is not equal to " + other);
+                return;
+            }
+            if (one != other) throw new Error(one + " is not equal to " + other);
+        },
+        shouldBeTrue: function(){
+            if (!one) throw new Error("Assertion failed.");
+        }
+    };
 }
-$.specOutput = console ? console.log: function(){};
+$.t = $.test;
+$t = $.test;
+$.specOutput = function(){};
 $.runSpecs = function(){
-    $.setupShouldHelpers();
 	var specs = $.specs();
 	for (var i = 0; i < specs.length; i++){
 		var spec = specs[i];
 		var res = $.runSpec(spec);
         with({print: $.specOutput}){
-            print('Ran ' + res.total + ' specs.');
+            print('Ran ' + res.total + ' specs for ' + spec.name + '.');
             print(res.fail + ' failures.');
         }
 	}

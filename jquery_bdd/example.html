@@ -14,10 +14,10 @@ $(function(){
 			this.array = ['a', 'b', 'c'];
 		})
 		.should('remove single elements', function(){
-			this.array.remove(0).length.shouldEqual(2);
+			$t(this.array.remove(0).length).shouldEqual(2);
 		})
 		.should('remove multiple elements', function(){
-			this.array.remove(0, 1).length.shouldEqual(1);
+			$t(this.array.remove(0, 1).length).shouldEqual(1);
 		})
 	$.specOutput = function(s){
 		$('#log').append(s + '\n');

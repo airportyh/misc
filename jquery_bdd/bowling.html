@@ -16,14 +16,14 @@ $(function(){
 		.beforeEach(function(){
 			this.bowling = new Bowling();
 		})
-		.should('should score 0 for gutter game', function(){
+		.should('score 0 for gutter game', function(){
 			for (var i = 0; i < 20; i++) this.bowling.hit(0);
-			this.bowling.score.shouldEqual(0);
+			$t(this.bowling.score).shouldEqual(0);
 		})
-		.should('should accumulate score', function(){
+		.should('accumulate score', function(){
 			this.bowling.hit(20);
 			this.bowling.hit(10);
-			this.bowling.score.shouldEqual(30);
+			$t(this.bowling.score).shouldEqual(30);
 		});
 		
 		
