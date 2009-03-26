@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Application 
+    xmlns="http://www.adobe.com/2006/mxml" 
+    xmlns:lc="*"
+    creationComplete="init()"
+>
+    <Script>
+    import mx.collections.ArrayCollection;
+    import mx.controls.Alert;
+    function doDrop(e){
+        var items = e.dragSource.dataForFormat("items");
+        var itemOn = list2.findItemForDragEvent(e);
+        Alert.show(items[0] + " assigned to " + itemOn.data);
+    }
+    function init(){
+        list1.dataProvider = new ArrayCollection([
+            'do laundry', 'wash car', 'take out the trash', 'water the plants',
+            'grocery shopping'
+        ]);
+        list2.dataProvider = new ArrayCollection([
+            'Johnnie', 'Mary', 'Sam'
+        ]);
+    }
+    </Script>
+    <DefaultListEffect color="0xccccff" id="glow"/>
+    <HBox>
+        <List id="list1" dragEnabled="true"/>
+        <lc:MyList id="list2" dropEnabled="true" dragDrop="doDrop(event)"/>
+    </HBox>
+</Application>
