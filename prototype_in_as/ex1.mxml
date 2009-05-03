@@ -1,0 +1,17 @@
+<Application name="Example 1" xmlns="http://www.adobe.com/2006/mxml">
+    <Script>
+        include 'includes/Array.as';
+        include 'includes/String.as';
+        include 'includes/Date.as';
+        include 'includes/Number.as';
+    </Script>
+    <creationComplete>
+        log.text += 'new Date().format() = ' + new Date().format() + '\n';
+        log.text += '[1, 2, 3].collect(function(i){ return i * i; }) = ' + 
+            [1, 2, 3].collect(function(i){ return i * i; }) + '\n';
+        log.text += "'one, two, three'.csv2Array().length = " + 
+            Object('one, two, three').csv2Array().length + '\n';
+        log.text += "2.minutes().ago() = " + Object(2).minutes().ago() + '\n';
+    </creationComplete>
+    <Text id="log" fontSize="12" width="100%" height="100%"/>
+</Application>
