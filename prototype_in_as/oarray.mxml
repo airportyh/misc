@@ -1,0 +1,18 @@
+<Application name="TestShowArray" xmlns="http://www.adobe.com/2006/mxml">
+<creationComplete>
+b = a.collect(function(i){ return i + 1; });
+listData = Object('a, b, c').csv2Array();
+</creationComplete>
+<Script>
+include 'includes/Array.as';
+include 'includes/String.as';
+[Bindable]
+var a:Array = [1,2,3];
+[Bindable]
+var b:Array;
+[Bindable]
+var listData:Array;
+</Script>
+<Text id="text1" text="{b}"/>
+<List dataProvider="{listData}"/>
+</Application>
