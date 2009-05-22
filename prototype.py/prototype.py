@@ -7,6 +7,9 @@ def _getattr(obj, name):
     except AttributeError:
         return None
 
+def _setattr(obj, name, val):
+    object.__setattr__(obj, name, val)
+
 class Object(object):
     prototype = None
     
@@ -16,14 +19,29 @@ class Object(object):
     
     def __getattribute__(this, name):
         val = _getattr(this, name) or _getattr(_getattr(this, '__proto__'), name)
-        if isinstance(val, property):
-            get = new.instancemethod(val.__get__, this)
+        if isinstance(val, property) and val.fget:
+            get = new.instancemethod(val.fget, this)
             return get()
         elif inspect.isfunction(val):
             func = new.instancemethod(val, this)
             return func
         else:
             return val
+            
+    def __setattr__(this, name, val):
+        if not isinstance(val, property):
+            _val = _getattr(this, name) or _getattr(_getattr(this, '__proto__'), name)
+            if isinstance(_val, property) and _val.fset:
+                _val.fset(this, val)
+                return
+        _setattr(this, name, val)
+
+    def __delattr__(this, name):
+        val = _getattr(this, name) or _getattr(_getattr(this, '__proto__'), name)
+        if isinstance(val, property) and val.fdel:
+            val.fdel(this)
+        else:
+            object.__delattr__(this, name)
 
 Object.prototype = Object()
 
