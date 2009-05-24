@@ -10,7 +10,19 @@ def _getattr(obj, name):
 def _setattr(obj, name, val):
     object.__setattr__(obj, name, val)
 
+def _proto_getattr(obj, name):
+    val = _getattr(obj, name)
+    if val is None:
+        parent = _getattr(obj, '__proto__')
+        val = _getattr(parent, name)
+    return val
+
+class ObjectMetaClass(type):
+    def __repr__(cls):
+        return "<constructor '%s'>" % cls.__name__
+
 class Object(object):
+    __metaclass__ = ObjectMetaClass
     prototype = None
     
     def __init__(this):
@@ -18,7 +30,7 @@ class Object(object):
         this.constructor = this.__class__
     
     def __getattribute__(this, name):
-        val = _getattr(this, name) or _getattr(_getattr(this, '__proto__'), name)
+        val = _proto_getattr(this, name)
         if isinstance(val, property) and val.fget:
             get = new.instancemethod(val.fget, this)
             return get()
@@ -30,14 +42,14 @@ class Object(object):
             
     def __setattr__(this, name, val):
         if not isinstance(val, property):
-            _val = _getattr(this, name) or _getattr(_getattr(this, '__proto__'), name)
+            _val = _proto_getattr(this, name)
             if isinstance(_val, property) and _val.fset:
                 _val.fset(this, val)
                 return
         _setattr(this, name, val)
 
     def __delattr__(this, name):
-        val = _getattr(this, name) or _getattr(_getattr(this, '__proto__'), name)
+        val = _proto_getattr(this, name)
         if isinstance(val, property) and val.fdel:
             val.fdel(this)
         else:
