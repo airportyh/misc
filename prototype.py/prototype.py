@@ -12,9 +12,9 @@ def _setattr(obj, name, val):
 
 def _proto_getattr(obj, name):
     val = _getattr(obj, name)
-    if val is None:
-        parent = _getattr(obj, '__proto__')
-        val = _getattr(parent, name)
+    while val is None and obj is not None:
+        obj = _getattr(obj, '__proto__')
+        val = _getattr(obj, name)
     return val
 
 class ObjectMetaClass(type):

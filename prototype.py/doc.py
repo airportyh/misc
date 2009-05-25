@@ -97,6 +97,12 @@ Deleting Dizzy Gillespie.
 >>> father.children = [son]
 >>> len(father.children)
 1
+
+# multi-level inheritence
+>>> grandson = Person('Tony', 'Bard')
+>>> grandson.__proto__ = son
+>>> grandson.eyeColor
+'blue'
 """
 if __name__ == "__main__":
     import doctest
