@@ -59,16 +59,30 @@ $.runSpec = function(spec){
 $.test = function(one){
     return {
         shouldEqual: function(other){
-            if ((one && one.constructor == Date) && (other && other.constructor == Date)){
+            if ((one && one.constructor === Date) && 
+                (other && other.constructor === Date)){
                 one = one.getTime();
                 other = other.getTime();
             }
-            if ((one && one.constructor == Array) && (other && other.constructor == Array)){
+            if ((one && one.constructor === Array) && 
+                (other && other.constructor === Array)){
                 if (one.length != other.length) throw new Error(one + " is not equal to " + other);
                 for (var i = 0; i < one.length; i++)
                     if (one[i] != other[i])
                         throw new Error(one + " is not equal to " + other);
                 return;
+            }
+            if ((one && one.constructor === Object) && 
+                (other && other.constructor === Object)){
+              function listRepr(obj){
+                var ret = [];
+                for (var key in obj){
+                  ret.push(key + ':' + obj[key]);
+                }
+                return ret;
+              }
+              $.test(listRepr(one)).shouldEqual(listRepr(other));
+              return;
             }
             if (one != other) throw new Error(one + " is not equal to " + other);
         },
