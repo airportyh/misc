@@ -17,7 +17,9 @@
     if (val === undefined){
       return this.elements.filter(function(){ return this.checked; }).val();
     }else{
-      this.elements.filter(function(){ return this.val() == val; }).attr('checked', true);
+      if (this.lastVal == val) return;
+      this.lastVal = val;
+      this.elements.filter(function(){ return $(this).val() == val; }).attr('checked', true);
       return this;
     }
   }
