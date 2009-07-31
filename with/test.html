@@ -51,6 +51,33 @@
         }
         expect(this.lips).toBe('pink')
       })
+      .should('not do assignment if attr has been ' +
+        'deleted(deleting makes it "not exist")', function(){
+        delete this.name
+        with(this){
+          name = 'tony'
+        }
+        expect(this.name).toBe(undefined)
+      })
+      .should('delete', function(){
+        with(this){
+          delete name
+        }
+        expect(this.name).toBe(undefined)
+      })
+      .should('delete does not remove the variable from ' +
+        'within the "with" scope', function(){
+        with(this){
+          delete name
+          expect(name).toBe('tony')
+        }
+      })
+      .should('be silent if deleting non-existing attr', function(){
+        with(this){
+          delete hands
+        }
+        expect(this.hands).toBe(undefined)
+      })
       .should('do assignment if attr is null', function(){
         with(this){
           eyes = 'brown'
