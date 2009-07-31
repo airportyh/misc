@@ -1,0 +1,142 @@
+describe('with')
+  .beforeEach(function(){
+    this.name = 'Houston'
+    this.age = 18
+    this.eyes = null
+    this.lips = undefined
+  })
+  .should('get attr', function(){
+    with(this){
+      expect(name).toBe('Houston')
+      expect(age).toBe(18)
+      expect(eyes).toBe(null)
+      expect(lips).toBe(undefined)
+    }
+  })
+  .should('raise if doesn\'t exist', function(){
+    with(this){
+      expect(function(){namee}).toRaise()
+      this.namee // but add this and doesn't raise
+    }
+  })
+  .should('reference variable from outside with scope', function(){
+    var hair = 'dark'
+    with(this){
+      expect(hair).toBe('dark')
+    }
+  })
+  .should('do assignment', function(){
+    with(this){
+      name = 'Kenny'
+    }
+    expect(this.name).toBe('Kenny')
+  })
+  .should('do not do assignment if attr does exist yet', function(){
+    /*
+    when you make an assignment to an attribute of the object in 
+    question(the one you are working *with*), that attribute must 
+    already exist(been assigned some value), otherwise, it will 
+    behavior like it would outside the with scope and assign the 
+    attribute to the window object.
+    */
+    with(this){
+      hair = 'dark'
+    }
+    expect(this.hair).toBe(undefined)
+    expect(hair).toBe('dark')
+    expect(window.hair).toBe(hair)
+  })
+  .should('do assignment if attr is defined to be undefined', function(){
+    /*
+    I had always thought that assigning undefined to an attribute 
+    is the same as it having never been assigned a value at all. 
+    I was wrong. But deleting the attribute will revert it to the 
+    state of non-existence, as the next test shows.
+    */
+    with(this){
+      lips = 'pink'
+    }
+    expect(this.lips).toBe('pink')
+  })
+  .should('not do assignment if attr has been ' +
+    'deleted(deleting makes it "not exist")', function(){
+    /*
+    Deleting the attribute will revert it to the 
+    state of non-existence, which makes unassignable from within
+    the 'with' scope again
+    */
+    delete this.name
+    with(this){
+      name = 'tony'
+    }
+    expect(this.name).toBe(undefined)
+  })
+  .should('delete', function(){
+    with(this){
+      delete name
+    }
+    expect(this.name).toBe(undefined)
+  })
+  .should('delete does not remove the variable from ' +
+    'within the "with" scope', function(){
+    /*
+    WTF? You can delete an attribute from the object in question, 
+    as the last test shows, but the property name, when used unadorned 
+    still holds the last value within the with scope.
+    */
+    with(this){
+      delete name
+      expect(name).toBe('tony')
+    }
+  })
+  .should('be silent if deleting non-existing attr', function(){
+    with(this){
+      delete hands
+    }
+    expect(this.hands).toBe(undefined)
+  })
+  .should('do assignment if attr is null', function(){
+    with(this){
+      eyes = 'brown'
+    }
+    expect(this.eyes).toBe('brown')
+  })
+  .should('do assignment using this if attr does not exist', function(){
+    with(this){
+      this.hair = 'dark'
+    }
+    expect(this.hair).toBe('dark')
+  })
+  .should('var outside with scope does not override', function(){
+    /*
+    variables defined outside the with scope has lower precedence 
+    than attributes of the object in question.
+    */
+    var name = 'Jen'
+    with(this){
+      expect(name).toBe('Houston')
+    }
+  })
+  .should('var outside with scope does not override (2)', function(){
+    this.window = 'Not window'
+    with(this){
+      expect(window).toBe('Not window')
+    }
+  })
+  .should('var inside scope overrides', function(){
+    with(this){
+      var name = 'Jen'
+      expect(name).toBe('Jen')
+    }
+  })
+  
+describe('javascript')
+  .should('raise if var does\'t exist', function(){
+    expect(function(){namee}).toRaise()
+  })
+  .should('not raise if used within typeof', function(){
+    expect(typeof namee).toBe('undefined')
+  })
+  .should('no raise if accessing non-existing attr', function(){
+    expect(this.name).toBe(undefined)
+  })
