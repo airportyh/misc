@@ -4,6 +4,7 @@ describe('with')
     this.age = 18
     this.eyes = null
     this.lips = undefined
+    window.name = "window's name"
   })
   .should('get attr', function(){
     with(this){
@@ -16,7 +17,7 @@ describe('with')
   .should('raise if doesn\'t exist', function(){
     with(this){
       expect(function(){namee}).toRaise()
-      this.namee // but add this and doesn't raise
+      this.namee // but write "this." and doesn't raise
     }
   })
   .should('reference variable from outside with scope', function(){
@@ -31,12 +32,12 @@ describe('with')
     }
     expect(this.name).toBe('Kenny')
   })
-  .should('do not do assignment if attr does exist yet', function(){
+  .should('not do assignment if attr does exist yet', function(){
     /*
     when you make an assignment to an attribute of the object in 
     question(the one you are working *with*), that attribute must 
     already exist(been assigned some value), otherwise, it will 
-    behavior like it would outside the with scope and assign the 
+    behave like it would outside the with scope and assign the 
     attribute to the window object.
     */
     with(this){
@@ -67,9 +68,10 @@ describe('with')
     */
     delete this.name
     with(this){
-      name = 'tony'
+      name = 'tony' // this sets window.name to 'tony'
     }
     expect(this.name).toBe(undefined)
+    name = undefined
   })
   .should('delete', function(){
     with(this){
@@ -77,16 +79,12 @@ describe('with')
     }
     expect(this.name).toBe(undefined)
   })
-  .should('delete does not remove the variable from ' +
-    'within the "with" scope', function(){
-    /*
-    WTF? You can delete an attribute from the object in question, 
-    as the last test shows, but the property name, when used unadorned 
-    still holds the last value within the with scope.
-    */
+  .should('deleting makes the attribute go away, and you are' +
+    'again accessing window\'s attrs', function(){
     with(this){
+      expect(name).toBe('Houston')
       delete name
-      expect(name).toBe('tony')
+      expect(name).toBe("window's name")
     }
   })
   .should('be silent if deleting non-existing attr', function(){
@@ -129,6 +127,21 @@ describe('with')
       expect(name).toBe('Jen')
     }
   })
+  .should('have no lexical scoping', function(){
+    var instrument = 'sax'
+    with(this){
+      var instrument = 'trumpet'
+      expect(instrument).toBe('trumpet')
+    }
+    expect(instrument).toBe('trumpet')
+  })
+  .should('erase vars after the with scope closes', function(){
+    var name = 'blah'
+    with(this){
+      expect(name).toBe('Houston')
+    }
+    expect(name).toBe('blah')
+  })
   
 describe('javascript')
   .should('raise if var does\'t exist', function(){
@@ -139,4 +152,10 @@ describe('javascript')
   })
   .should('no raise if accessing non-existing attr', function(){
     expect(this.name).toBe(undefined)
+  })
+  .should('not delete variable', function(){
+    var name = 'tony'
+    expect(name).toBe('tony')
+    delete name
+    expect(name).toBe('tony')
   })
