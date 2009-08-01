@@ -159,3 +159,8 @@ describe('javascript')
     delete name
     expect(name).toBe('tony')
   })
+  .should('be in if defined to be undefined', function(){
+      var obj = {}
+      obj.attr = undefined
+      expect('attr' in obj).toBe(true)
+  })
