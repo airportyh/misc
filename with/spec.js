@@ -45,7 +45,7 @@ describe('with')
     }
     expect(this.hair).toBe(undefined)
     expect(hair).toBe('dark')
-    expect(window.hair).toBe(hair)
+    expect(window.hair).toBe('dark')
   })
   .should('do assignment if attr is defined to be undefined', function(){
     /*
@@ -71,7 +71,7 @@ describe('with')
       name = 'tony' // this sets window.name to 'tony'
     }
     expect(this.name).toBe(undefined)
-    name = undefined
+    expect(window.name).toBe('tony')
   })
   .should('delete', function(){
     with(this){
