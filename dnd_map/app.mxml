@@ -1,0 +1,9 @@
+<Application 
+    xmlns="http://www.adobe.com/2006/mxml"
+    xmlns:local="*"
+    backgroundColor="0xffffff"
+    creationComplete="initApp()">
+    <Script source="app.as"/>
+    <local:Map id="map" client="gme-datatrac"
+        width="100%" height="100%"/>
+</Application>

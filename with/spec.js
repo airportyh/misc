@@ -79,7 +79,7 @@ describe('with')
     }
     expect(this.name).toBe(undefined)
   })
-  .should('deleting makes the attribute go away, and you are' +
+  .should('deleting makes the attribute non-existant, and you are' +
     'again accessing window\'s attrs', function(){
     with(this){
       expect(name).toBe('Houston')
@@ -99,7 +99,7 @@ describe('with')
     }
     expect(this.eyes).toBe('brown')
   })
-  .should('do assignment using this if attr does not exist', function(){
+  .should('do assignment using this. if attr does not exist', function(){
     with(this){
       this.hair = 'dark'
     }
@@ -121,11 +121,12 @@ describe('with')
       expect(window).toBe('Not window')
     }
   })
-  .should('var inside scope overrides', function(){
+  .should('var inside scope overrides attribute', function(){
     with(this){
-      var name = 'Jen'
+      var name = 'Jen' // this has the same effect as: name = 'Jen'
       expect(name).toBe('Jen')
     }
+    expect(this.name).toBe('Jen')
   })
   .should('have no lexical scoping', function(){
     var instrument = 'sax'
@@ -135,7 +136,7 @@ describe('with')
     }
     expect(instrument).toBe('trumpet')
   })
-  .should('erase vars after the with scope closes', function(){
+  .should('reset vars after the with scope closes', function(){
     var name = 'blah'
     with(this){
       expect(name).toBe('Houston')

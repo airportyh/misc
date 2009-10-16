@@ -1,0 +1,49 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" 
+ "http://www.w3.org/TR/html4/strict.dtd"> 
+<html> 
+<head> 
+	<title>Datatrac Route Templates</title>
+	<style type="text/css">
+		#flexApp {
+		height: 100%;
+		width: 100%;
+	}
+	body {
+		padding: 0;
+		margin: 0;
+	}
+	</style>
+	<script src="../javascript/prototype.js"></script>
+	<script src="../javascript/FABridge.js"></script>
+	<script src="../javascript/swfobject.js"></script>
+	<script type="text/javascript"><!--
+	var flex, app;
+	function setSize(){
+		$('app').setAttribute('height', document.viewport.getHeight());
+	}
+	window.onresize = setSize;
+	function onLoad(){
+		setSize();
+		FABridge.addInitializationCallback("flash",function(){
+			flex = FABridge.flash;
+			app = flex.root();
+		});
+		$('app').focus();
+	}
+	//-->
+	</script>
+</head>
+<body onload="onLoad()" scroll="no" style="overflow: hidden">
+<div id="player"></div>
+<script type="text/javascript"><!--
+	var so = new SWFObject('app.swf', 'app',
+				'100%','100%',
+				'9.0.28');
+	so.useExpressInstall('/static/flash/expressInstall.swf');
+	so.addParam('allowscriptaccess', 'always');
+	so.addParam('allowfullscreen', 'true');
+	so.write('player');
+	//-->
+</script>
+</body> 
+</html> 
