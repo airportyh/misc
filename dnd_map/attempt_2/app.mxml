@@ -1,0 +1,27 @@
+<Application 
+    xmlns="http://www.adobe.com/2006/mxml"
+    xmlns:local="*"
+    backgroundColor="0xffffff">
+    <Script><![CDATA[
+        import com.google.maps.MapEvent
+        import com.google.maps.LatLng
+        function setupLandmarks(){
+        
+            map.setCenter(new LatLng(36.1741, -97.0422))
+            map.setZoom(4)
+            
+            var sanAntonio:LatLng = new LatLng(29.53, -98.47)
+            var richmond:LatLng = new LatLng(37.50, -77.33)
+            var newYork:LatLng = new LatLng(40.77, -73.98)
+            var atlanta:LatLng = new LatLng(33.65, -84.42)
+            var sanJose:LatLng = new LatLng(37.37, -121.92)
+            var denver:LatLng = new LatLng(39.75, -104.87)
+            var chicago:LatLng = new LatLng(41.90, -87.65)
+            map.addPolyline([chicago, atlanta, sanAntonio])
+            map.addMarker(richmond)
+
+        }
+    ]]></Script>
+    <local:Map id="map" client="gme-datatrac"
+        width="100%" height="100%" mapevent_mapready="setupLandmarks()"/>
+</Application>
