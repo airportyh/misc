@@ -17,7 +17,7 @@
             var sanJose:LatLng = new LatLng(37.37, -121.92)
             var denver:LatLng = new LatLng(39.75, -104.87)
             var chicago:LatLng = new LatLng(41.90, -87.65)
-            map.addPolyline([chicago, sanAntonio, atlanta])
+            map.addPolyline([chicago, atlanta, sanAntonio])
             map.addMarker(richmond)
 
         }
