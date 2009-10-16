@@ -1,0 +1,25 @@
+<html>
+  <head>
+    <title>Hello Worlders!</title>
+    <style type="text/css">
+      h1{
+        font-size: 1.2em;
+        font-family: Helvetica, Arial, Sans-Serif;
+      }
+    </style>
+  </head>
+  <body>
+    
+    <div>
+      <form action="/" method="post" style="float: right">
+        <input type="text" name="id"/>
+        <button type="submit">Post github gist id</button>
+      </form>
+      <h1>Hello Worlders!</h1>
+      <div style="clear: both">
+    </div>
+    <% @gists.each do |gist| %>
+      <p><script type="text/javascript" src="http://gist.github.com/<%=gist['id']%>.js"></script></p>
+    <% end %>
+  </body>
+</html>

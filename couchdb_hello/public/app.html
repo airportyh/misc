@@ -1,0 +1,28 @@
+<html>
+<head>
+  <script type="text/javascript" src="jquery.js"></script>
+  <script type="text/javascript" src="ecma5array.js"></script>
+  <script type="text/javascript" charset="utf-8">
+    var COUCHDB = 'http://127.0.0.1:5984/play/'
+    var jsonData 
+    function get(id, success){
+      $.getJSON(COUCHDB + id, {}, function(data){
+        success(data)
+      })
+    }
+    function put(obj, id, error){
+      $.ajax({
+        type: 'PUT',
+        url: COUCHDB + id,
+        dataType: 'json',
+        error: error
+      })
+    }
+    $(function(){
+    })
+  </script>
+</head>
+<body>
+  
+</body>
+</html>

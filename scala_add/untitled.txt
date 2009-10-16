@@ -1,0 +1,9 @@
+How do you do Route Planning?
+  Ahead of time. By zipcode/area only. 
+Do you use route manipulation?
+  Move stops between routes. Clean up ordering. Order by city, for ex. Actual order is up to driver. Athim Logistics route optimization. 6 routes.
+  (We are replacing the functionality of the cross reference stuff)
+Same location same day?
+  By customer. Special rules. Pickup routes would be but he doesn't do it.
+Uses route optimisation software for quotes?
+
