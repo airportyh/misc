@@ -283,6 +283,7 @@ class App
     @synth.open
     @soundbank = @synth.defaultSoundbank
     @synth.loadAllInstruments(@soundbank)
+    @loaded_instruments = @synth.loadedInstruments
     @channels = @synth.channels.enum_for(:each_with_index).map{|c, i| MidiChannel.new(c, i)}
     @current_channel = @channels[0]
   end
