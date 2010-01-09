@@ -32,7 +32,7 @@ $dvorak = [
   ';qjkxbmwvz'.scan(/./)  
 ].reverse
 $keyboard = $dvorak
-$velocity = 100
+$velocity = 68
 $base = 48
 
 def note_to_pitch(sym)
@@ -104,6 +104,24 @@ class MappingLayout # abstract
   end
 end
 
+class LowToHigh
+  def to_s
+    "Low-to-high"
+  end
+  
+  def call(k)
+    ret = nil
+    $keyboard.each_with_index do |row, r|
+      row.each_with_index do |key, c|
+        if key == k.chr.downcase then
+          ret = $base + c * 4 + r
+        end
+      end
+    end
+    return ret
+  end
+end
+
 class ScaleLayout < MappingLayout
   def to_s
     "Scale"
@@ -118,6 +136,21 @@ class ScaleLayout < MappingLayout
     ].reverse
   end
   
+end
+
+class MajorScaleLayout < MappingLayout
+  def to_s
+    "Major Scale"
+  end
+  
+  def mapping
+    [
+      [:c7, :d7, :e7, :f7, :g7, :f7, :g7, :a7, :b7, :c8, :d8, :e8],
+      [:c6, :d6, :e6, :f6, :g6, :f6, :g6, :a6, :b6, :c7, :d7, :e7],
+      [:c5, :d5, :e5, :f5, :g5, :f5, :g5, :a5, :b5, :c6, :d6],
+      [:c4, :d4, :e4, :f4, :g4, :f4, :g4, :a4, :b4, :c5]
+    ].reverse
+  end
 end
 
 class PentatonicLayout < MappingLayout
@@ -222,7 +255,8 @@ class App
   def initialize
     @mappings = [
       ChromaticLayout.new, ScaleLayout.new, 
-      WholeToneLayout.new, PentatonicLayout.new]
+      WholeToneLayout.new, PentatonicLayout.new,
+      LowToHigh.new, MajorScaleLayout.new]
     @current_mapping = @mappings.first
     @current_notes = {}
     @offset_octaves = 0
