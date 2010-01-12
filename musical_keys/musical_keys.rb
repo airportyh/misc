@@ -35,6 +35,18 @@ $keyboard = $dvorak
 $velocity = 68
 $base = 48
 
+def char_pos(k)
+  ret = nil
+  $keyboard.each_with_index do |row, r|
+    row.each_with_index do |key, c|
+      if key == k.chr.downcase then
+        ret = [r, c]
+      end
+    end
+  end
+  return ret
+end
+
 def note_to_pitch(sym)
   return nil if sym.nil?
   s = sym.to_s
@@ -43,12 +55,7 @@ def note_to_pitch(sym)
   return octave * 12 + $note_intervals[note]
 end
 
-def pitch_to_note(pitch)
-  octave = pitch / 12
-  note_interval = pitch % 12
-  note = $note_intervals_inverted[note_interval]
-  return "#{note.upcase}#{octave}".to_sym
-end
+
 
 class ChromaticLayout
   def to_s
@@ -197,7 +204,7 @@ class MidiChannel
   end
 end
 
-class Keyboard < java.awt.Component
+class KeyboardDisplay < java.awt.Component
   
   def initialize(app)
     super()
@@ -205,7 +212,7 @@ class Keyboard < java.awt.Component
   end
   
   def getPreferredSize
-    java.awt.Dimension.new(600, 200)
+    java.awt.Dimension.new(600, 400)
   end
   
   def scale(num)
@@ -224,7 +231,6 @@ class Keyboard < java.awt.Component
         y = gap + row * (height + gap)
         rect = java.awt.geom.RoundRectangle2D::Double.new(
           x, y, width, height, round, round)
-          
         
         code = char[0]
         
@@ -235,15 +241,124 @@ class Keyboard < java.awt.Component
           g.color = org_color
         end
         g.draw(rect)
-        pitch = @app.pitch_for_char(code)
-        if pitch
-          note = pitch_to_note(pitch)
-          g.drawString(note.to_s, x + gap, y + gap + gap * 2)
+        note = @app.note_for_char(code)
+        if note
+          g.drawString(note.name, x + gap, y + gap + gap * 2)
         end
       end
     end
   end
+end
+
+class KeyboardSection
+  include java.awt.event.ActionListener
+  include javax.swing.event.ChangeListener
+  attr_accessor :current_channel, :current_layout, :offset_octaves, :name
+  def initialize(name, app, channel)
+    @name = name
+    @app = app
+    @current_channel = channel
+    @current_layout = @app.layouts.first
+    @offset_octaves = 0
+  end
   
+  def create_controls
+    form_panel = javax.swing.JPanel.new
+    form_panel.layout = Java::net.miginfocom.swing.MigLayout.new("fill")
+    
+    title_label = javax.swing.JLabel.new(@name, javax.swing.SwingConstants::CENTER)
+    title_label.font = java.awt.Font.new("Arial", -1, 20)
+    form_panel.add(title_label, "span 2, growx, wrap, align center")
+    
+    @channel_select = javax.swing.JComboBox.new(@app.channels.to_java)
+    @channel_select.selectedItem = @current_channel
+    @channel_select.focusable = false
+    @channel_select.addActionListener(self)
+    form_panel.add(javax.swing.JLabel.new("Channel"))
+    form_panel.add(@channel_select, "growx, wrap")
+    
+    @layout_select = javax.swing.JComboBox.new(@app.layouts.to_java)
+    @layout_select.focusable = false
+    @layout_select.addActionListener(self)
+    form_panel.add(javax.swing.JLabel.new("Layout"))
+    form_panel.add(@layout_select, "growx, wrap")
+  
+    @instrument_select = javax.swing.JComboBox.new(@app.loaded_instruments)
+    @instrument_select.focusable = false
+    @instrument_select.addActionListener(self)
+    form_panel.add(javax.swing.JLabel.new("Instrument"))
+    form_panel.add(@instrument_select, "growx, wrap")
+  
+    @offset_spinner = javax.swing.JSpinner.new
+    @offset_spinner.focusable = false
+    @offset_spinner.editor.textField.focusable = false
+    @offset_spinner.addChangeListener(self)
+    form_panel.add(javax.swing.JLabel.new("Octave"))
+    form_panel.add(@offset_spinner, "growx, wrap")
+    return form_panel
+  end
+  
+  def octave_up
+    @offset_octaves += 1
+    offset_octaves_changed
+  end
+  
+  def octave_down
+    @offset_octaves -= 1
+    offset_octaves_changed
+  end
+  
+  def pitch_for(char)
+    @current_layout.call(char) + (@offset_octaves * 12)
+  end
+  
+  def actionPerformed(event)
+    if event.source == @channel_select
+      @current_channel = @channel_select.selectedItem
+    elsif event.source == @layout_select
+      @current_layout = @layout_select.selectedItem
+      current_layout_changed
+    elsif event.source == @instrument_select
+      sync_channel_program
+    end
+  end
+  
+  def stateChanged(event)
+    if event.source == @offset_spinner
+      @offset_octaves = @offset_spinner.value
+      offset_octaves_changed
+    end
+  end
+  
+  def offset_octaves_changed
+    @offset_spinner.value = @offset_octaves
+    #@offset_label.text = @offset_octaves.to_s
+    @app.keyboard.repaint
+  end
+  
+  def current_layout_changed
+    @app.keyboard.repaint
+  end
+
+  def sync_channel_program
+    instrument = @instrument_select.selectedItem
+    @current_channel.programChange(instrument.patch.bank, instrument.patch.program)
+  end
+end
+
+class PlayedNote
+  attr_accessor :keyboard, :pitch
+  def initialize(keyboard, pitch)
+    @keyboard = keyboard
+    @pitch = pitch
+  end
+  
+  def name
+    octave = @pitch / 12
+    note_interval = @pitch % 12
+    note = $note_intervals_inverted[note_interval]
+    return "#{note.upcase}#{octave}"
+  end
 end
 
 class App
@@ -251,62 +366,51 @@ class App
   include java.awt.event.KeyListener
   include java.awt.event.ActionListener
   include java.awt.event.MouseWheelListener
-  attr_accessor :current_notes
+  attr_accessor :current_notes, :channels, :layouts
+  attr_accessor :loaded_instruments, :keyboard
   def initialize
-    @mappings = [
+    @layouts = [
       ChromaticLayout.new, ScaleLayout.new, 
       WholeToneLayout.new, PentatonicLayout.new,
       LowToHigh.new, MajorScaleLayout.new]
-    @current_mapping = @mappings.first
+      
+    @split_keyboard = false
+    
     @current_notes = {}
-    @offset_octaves = 0
     @last_wheel_moved = nil
     initialize_synth
+    
+    @first_keyboard = KeyboardSection.new("Left Hand", self, @channels[0])
+    @second_keyboard = KeyboardSection.new("Right Hand", self, @channels[1])
     initialize_frame
   end
   
+  
   def initialize_frame
     @frame = javax.swing.JFrame.new('Musical Keys')
+    @frame.defaultCloseOperation = javax.swing.JFrame::EXIT_ON_CLOSE
     @frame.addWindowListener(self)
     
     @frame.addKeyListener(self)
     @frame.addMouseWheelListener(self)
     panel = javax.swing.JPanel.new
     panel.layout = java.awt.BorderLayout.new
-      form_panel = javax.swing.JPanel.new
-      form_panel.layout = Java::net.miginfocom.swing.MigLayout.new("fill")
-        @channel_select = javax.swing.JComboBox.new(@channels.to_java)
-        @channel_select.focusable = false
-        @channel_select.addActionListener(self)
-        form_panel.add(javax.swing.JLabel.new("Channel"))
-        form_panel.add(@channel_select, "growx, wrap")
+      controls_panel = javax.swing.JPanel.new
       
-        @mapping_select = javax.swing.JComboBox.new(@mappings.to_java)
-        @mapping_select.focusable = false
-        @mapping_select.addActionListener(self)
-        form_panel.add(javax.swing.JLabel.new("Layout"))
-        form_panel.add(@mapping_select, "growx, wrap")
+        controls_panel.add(@first_keyboard.create_controls)
+        controls_panel.add(@second_keyboard.create_controls)
       
-        @instrument_select = javax.swing.JComboBox.new(@loaded_instruments)
-        @instrument_select.focusable = false
-        @instrument_select.addActionListener(self)
-        form_panel.add(javax.swing.JLabel.new("Instrument"))
-        form_panel.add(@instrument_select, "growx, wrap")
+      panel.add(controls_panel, java.awt.BorderLayout::NORTH)
       
-      
-        @offset_label = javax.swing.JLabel.new
-        form_panel.add(javax.swing.JLabel.new("Octave"))
-        form_panel.add(@offset_label, "growx, wrap")
-      
-      panel.add(form_panel, java.awt.BorderLayout::NORTH)
-      
-      @keyboard = Keyboard.new(self)
+      @keyboard = KeyboardDisplay.new(self)
       panel.add(@keyboard, java.awt.BorderLayout::CENTER)
       
     @frame.add(panel)
-    offset_octaves_changed
+    @first_keyboard.offset_octaves_changed
+    @second_keyboard.offset_octaves_changed
     current_notes_changed
-    sync_channel_program
+    @first_keyboard.sync_channel_program
+    @second_keyboard.sync_channel_program
     @frame.pack()
     @frame.setLocationRelativeTo(nil)
     @frame.show()
@@ -319,16 +423,15 @@ class App
     @synth.loadAllInstruments(@soundbank)
     @loaded_instruments = @synth.loadedInstruments
     @channels = @synth.channels.enum_for(:each_with_index).map{|c, i| MidiChannel.new(c, i)}
-    @current_channel = @channels[0]
   end
   
   def mouseWheelMoved(event)
     now = Time.now
     if @last_wheel_moved.nil? or (now - @last_wheel_moved > 0.2)
       if event.unitsToScroll > 0
-        octave_down
+        @second_keyboard.octave_down
       else
-        octave_up
+        @second_keyboard.octave_up
       end
     end
     @last_wheel_moved = now
@@ -342,7 +445,8 @@ class App
   def windowOpened(event);end
   
   def windowDeactivated(event)
-    @current_channel.allNotesOff()
+    @first_keyboard.current_channel.allNotesOff
+    @second_keyboard.current_channel.allNotesOff
     @current_notes = {}
   end
   
@@ -350,52 +454,26 @@ class App
     @keyboard.repaint
   end
   
-  def offset_octaves_changed
-    @offset_label.text = @offset_octaves.to_s
-    @keyboard.repaint
+  def left_hand?(char)
+    pos = char_pos(char)
+    return pos[0] >= 2 ? pos[1] <= 5 : pos[1] <= 4
   end
   
-  def current_mapping_changed
-    @keyboard.repaint
-  end
-  
-  def pitch_for_char(char)
+  def note_for_char(char)
     begin
-      return @current_mapping.call(char) + (@offset_octaves * 12)
-    rescue
+      keyboard = left_hand?(char) ? @first_keyboard : @second_keyboard
+      pitch = keyboard.pitch_for(char)
+      return PlayedNote.new(keyboard, pitch)
+    rescue => e
+      puts "error #{e}"
       return nil
     end
   end
   
-  def pitch_for_event(event)
-    pitch_for_char(event.getKeyChar)
+  def note_for_event(event)
+    note_for_char(event.getKeyChar)
   end
   
-  def sync_channel_program
-    instrument = @instrument_select.selectedItem
-    @current_channel.programChange(instrument.patch.bank, instrument.patch.program)
-  end
-  
-  def actionPerformed(event)
-    if event.source == @channel_select
-      @current_channel = @channel_select.selectedItem
-    elsif event.source == @mapping_select
-      @current_mapping = @mapping_select.selectedItem
-      current_mapping_changed
-    elsif event.source == @instrument_select
-      sync_channel_program
-    end
-  end
-  
-  def octave_up
-    @offset_octaves += 1
-    offset_octaves_changed
-  end
-  
-  def octave_down
-    @offset_octaves -= 1
-    offset_octaves_changed
-  end
   
   def keyPressed(event)
     key_code = event.getKeyCode
@@ -405,23 +483,23 @@ class App
       octave_down
     else
       key_char = event.getKeyChar
-      pitch = pitch_for_event(event)
-      return if pitch.nil?
+      note = note_for_event(event)
+      return if note.nil?
       if not @current_notes.include?(key_char)
-        @current_notes[key_char] = pitch
+        @current_notes[key_char] = note
         current_notes_changed
-        @current_channel.noteOn(pitch, $velocity)
+        note.keyboard.current_channel.noteOn(note.pitch, $velocity)
       end
     end
   end
   
   def keyReleased(event)
     key_char = event.getKeyChar
-    pitch = @current_notes[key_char]
-    return if pitch.nil?
+    note = @current_notes[key_char]
+    return if note.nil?
     @current_notes.delete(key_char)
     current_notes_changed
-    @current_channel.noteOff(pitch, $velocity)
+    note.keyboard.current_channel.noteOff(note.pitch, $velocity)
   end
   
   def keyTyped(event);end
