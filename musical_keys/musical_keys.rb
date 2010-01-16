@@ -1,9 +1,35 @@
 #!/usr/bin/env /usr/local/jruby-1.4.0/bin/jruby
 
 require 'java'
+require 'cheri_java_preview'
 require 'miglayout-3.7-swing.jar'
 require 'set'
 require 'enumerator'
+
+
+# average function for arrays
+class Array
+  def avg
+   inject{|x, y| x + y} / size.to_f
+  end
+end
+
+JPanel = javax.swing.JPanel
+JLabel = javax.swing.JLabel
+BorderLayout = java.awt.BorderLayout
+JFrame = javax.swing.JFrame
+MigLayout = Java::net.miginfocom.swing.MigLayout
+SwingConstants = javax.swing.SwingConstants
+JComboBox = javax.swing.JComboBox
+JSpinner = javax.swing.JSpinner
+Font = java.awt.Font
+
+AudioFormat = javax.sound.sampled.AudioFormat
+DataLineInfo = javax.sound.sampled.DataLine::Info
+TargetDataLine = javax.sound.sampled.TargetDataLine
+AudioSystem = javax.sound.sampled.AudioSystem
+AudioFileFormat = javax.sound.sampled.AudioFileFormat
+
 $note_intervals = {
   'c' => 0,
   'c#' => 1,
@@ -32,7 +58,6 @@ $dvorak = [
   ';qjkxbmwvz'.scan(/./)  
 ].reverse
 $keyboard = $dvorak
-$velocity = 68
 $base = 48
 
 def char_pos(k)
@@ -199,6 +224,10 @@ class MidiChannel
     @channel.programChange(bank, program)
   end
   
+  def controlChange(controller, value)
+    @channel.controlChange(controller, value)
+  end
+  
   def to_s
     "Channel #{@index}"
   end
@@ -263,37 +292,37 @@ class KeyboardSection
   end
   
   def create_controls
-    form_panel = javax.swing.JPanel.new
-    form_panel.layout = Java::net.miginfocom.swing.MigLayout.new("fill")
+    form_panel = JPanel.new
+    form_panel.layout = MigLayout.new("fill")
     
-    title_label = javax.swing.JLabel.new(@name, javax.swing.SwingConstants::CENTER)
-    title_label.font = java.awt.Font.new("Arial", -1, 20)
+    title_label = JLabel.new(@name, SwingConstants::CENTER)
+    title_label.font = Font.new("Arial", -1, 20)
     form_panel.add(title_label, "span 2, growx, wrap, align center")
     
-    @channel_select = javax.swing.JComboBox.new(@app.channels.to_java)
+    @channel_select = JComboBox.new(@app.channels.to_java)
     @channel_select.selectedItem = @current_channel
     @channel_select.focusable = false
     @channel_select.addActionListener(self)
-    form_panel.add(javax.swing.JLabel.new("Channel"))
+    form_panel.add(JLabel.new("Channel"))
     form_panel.add(@channel_select, "growx, wrap")
     
-    @layout_select = javax.swing.JComboBox.new(@app.layouts.to_java)
+    @layout_select = JComboBox.new(@app.layouts.to_java)
     @layout_select.focusable = false
     @layout_select.addActionListener(self)
-    form_panel.add(javax.swing.JLabel.new("Layout"))
+    form_panel.add(JLabel.new("Layout"))
     form_panel.add(@layout_select, "growx, wrap")
   
-    @instrument_select = javax.swing.JComboBox.new(@app.loaded_instruments)
+    @instrument_select = JComboBox.new(@app.loaded_instruments)
     @instrument_select.focusable = false
     @instrument_select.addActionListener(self)
-    form_panel.add(javax.swing.JLabel.new("Instrument"))
+    form_panel.add(JLabel.new("Instrument"))
     form_panel.add(@instrument_select, "growx, wrap")
   
-    @offset_spinner = javax.swing.JSpinner.new
+    @offset_spinner = JSpinner.new
     @offset_spinner.focusable = false
     @offset_spinner.editor.textField.focusable = false
     @offset_spinner.addChangeListener(self)
-    form_panel.add(javax.swing.JLabel.new("Octave"))
+    form_panel.add(JLabel.new("Octave"))
     form_panel.add(@offset_spinner, "growx, wrap")
     return form_panel
   end
@@ -378,32 +407,75 @@ class App
     
     @current_notes = {}
     @last_wheel_moved = nil
+    
+    @amplitude = 0
+    
     initialize_synth
     
     @first_keyboard = KeyboardSection.new("Left Hand", self, @channels[0])
     @second_keyboard = KeyboardSection.new("Right Hand", self, @channels[1])
     initialize_frame
+    track_microphone_amplitude
+  end
+
+  def track_microphone_amplitude
+    avg_window_size = 20
+    avg_window = [0] * avg_window_size
+    @microphone_thread = Thread.new do
+      format = AudioFormat.new(8000.0, 8, 1, true, false)
+      data_line_info = DataLineInfo.new(TargetDataLine.java_class, format)
+      data_line = AudioSystem.getLine(data_line_info)
+      data_line.open
+      data_line.start
+      array_size = 100
+      bytes = Array.java_array :byte, array_size
+      while true
+        begin
+          bytes_read = data_line.read(bytes, 0, array_size)
+          value = bytes.map{|b|b.abs}.avg
+          avg_window = avg_window[1..avg_window_size-1] + [value]
+          @amplitude = avg_window.avg
+          amplitude_changed
+        rescue => e
+          puts e
+        end
+      end
+    end
+  end 
+  
+  def keyboards
+    [@first_keyboard, @second_keyboard]
   end
   
+  def amplitude_changed
+    @amplitude_label.text = @amplitude.to_s
+    volume = (@amplitude - 1.0) / 5.0 * 127.0
+    keyboards.each do |kb|
+      kb.current_channel.controlChange(7, volume)
+    end
+  end
   
   def initialize_frame
-    @frame = javax.swing.JFrame.new('Musical Keys')
-    @frame.defaultCloseOperation = javax.swing.JFrame::EXIT_ON_CLOSE
+    @frame = JFrame.new('Musical Keys')
+    @frame.defaultCloseOperation = JFrame::EXIT_ON_CLOSE
     @frame.addWindowListener(self)
     
     @frame.addKeyListener(self)
     @frame.addMouseWheelListener(self)
-    panel = javax.swing.JPanel.new
-    panel.layout = java.awt.BorderLayout.new
-      controls_panel = javax.swing.JPanel.new
+    panel = JPanel.new
+    panel.layout = BorderLayout.new
+      controls_panel = JPanel.new
       
         controls_panel.add(@first_keyboard.create_controls)
         controls_panel.add(@second_keyboard.create_controls)
       
-      panel.add(controls_panel, java.awt.BorderLayout::NORTH)
+      panel.add(controls_panel, BorderLayout::NORTH)
       
       @keyboard = KeyboardDisplay.new(self)
-      panel.add(@keyboard, java.awt.BorderLayout::CENTER)
+      panel.add(@keyboard, BorderLayout::CENTER)
+      
+      @amplitude_label = JLabel.new
+      panel.add(@amplitude_label, BorderLayout::SOUTH)
       
     @frame.add(panel)
     @first_keyboard.offset_octaves_changed
@@ -425,13 +497,21 @@ class App
     @channels = @synth.channels.enum_for(:each_with_index).map{|c, i| MidiChannel.new(c, i)}
   end
   
+  def octave_up
+    @second_keyboard.octave_up
+  end
+  
+  def octave_down
+    @second_keyboard.octave_down
+  end
+  
   def mouseWheelMoved(event)
     now = Time.now
     if @last_wheel_moved.nil? or (now - @last_wheel_moved > 0.2)
       if event.unitsToScroll > 0
-        @second_keyboard.octave_down
+        octave_down
       else
-        @second_keyboard.octave_up
+        octave_up
       end
     end
     @last_wheel_moved = now
@@ -474,6 +554,9 @@ class App
     note_for_char(event.getKeyChar)
   end
   
+  def velocity
+    66
+  end
   
   def keyPressed(event)
     key_code = event.getKeyCode
@@ -488,7 +571,7 @@ class App
       if not @current_notes.include?(key_char)
         @current_notes[key_char] = note
         current_notes_changed
-        note.keyboard.current_channel.noteOn(note.pitch, $velocity)
+        note.keyboard.current_channel.noteOn(note.pitch, velocity)
       end
     end
   end
@@ -499,7 +582,7 @@ class App
     return if note.nil?
     @current_notes.delete(key_char)
     current_notes_changed
-    note.keyboard.current_channel.noteOff(note.pitch, $velocity)
+    note.keyboard.current_channel.noteOff(note.pitch, velocity)
   end
   
   def keyTyped(event);end
