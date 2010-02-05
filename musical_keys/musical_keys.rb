@@ -5,7 +5,8 @@ require 'cheri_java_preview'
 require 'miglayout-3.7-swing.jar'
 require 'set'
 require 'enumerator'
-
+require 'key_mapper'
+require 'note_layouts'
 
 # average function for arrays
 class Array
@@ -23,6 +24,9 @@ SwingConstants = javax.swing.SwingConstants
 JComboBox = javax.swing.JComboBox
 JSpinner = javax.swing.JSpinner
 Font = java.awt.Font
+GridLayout = java.awt.GridLayout
+JCheckBox = javax.swing.JCheckBox
+Color = java.awt.Color
 
 AudioFormat = javax.sound.sampled.AudioFormat
 DataLineInfo = javax.sound.sampled.DataLine::Info
@@ -30,178 +34,7 @@ TargetDataLine = javax.sound.sampled.TargetDataLine
 AudioSystem = javax.sound.sampled.AudioSystem
 AudioFileFormat = javax.sound.sampled.AudioFileFormat
 
-$note_intervals = {
-  'c' => 0,
-  'c#' => 1,
-  'd' => 2,
-  'd#' => 3,
-  'e' => 4,
-  'f' => 5,
-  'f#' => 6,
-  'g' => 7,
-  'g#' => 8,
-  'a' => 9,
-  'a#' => 10,
-  'b' => 11
-}
-$note_intervals_inverted = $note_intervals.invert
-$qwerty = [
-  '1234567890-='.scan(/./),
-  'qwertyuiop[]'.scan(/./),
-  "asdfghjkl;'".scan(/./),
-  'zxcvbnm,./'.scan(/./)
-].reverse
-$dvorak = [
-  '1234567890[]'.scan(/./),
-  "',.pyfgcrl/=".scan(/./),
-  'aoeuidhtns-'.scan(/./),
-  ';qjkxbmwvz'.scan(/./)  
-].reverse
-$keyboard = $dvorak
-$base = 48
 
-def char_pos(k)
-  ret = nil
-  $keyboard.each_with_index do |row, r|
-    row.each_with_index do |key, c|
-      if key == k.chr.downcase then
-        ret = [r, c]
-      end
-    end
-  end
-  return ret
-end
-
-def note_to_pitch(sym)
-  return nil if sym.nil?
-  s = sym.to_s
-  octave = s[-1].chr.to_i
-  note = s[0..-2]
-  return octave * 12 + $note_intervals[note]
-end
-
-
-
-class ChromaticLayout
-  def to_s
-    "Chromatic"
-  end
-  
-  def call(k)
-    ret = nil
-    $keyboard.each_with_index do |row, r|
-      row.each_with_index do |key, c|
-        if key == k.chr.downcase then
-          ret = ($base + r * 5 + c)
-        end
-      end
-    end
-    return ret
-  end
-end
-
-class WholeToneLayout
-  def to_s
-    "Whole Tone"
-  end
-  
-  def call(k)
-    ret = nil
-    $keyboard.each_with_index do |row, r|
-      row.each_with_index do |key, c|
-        if key == k.chr.downcase then
-          ret = ($base + r * 5 + (c * 2))
-        end
-      end
-    end
-    return ret
-  end
-end
-
-class MappingLayout # abstract
-  def mapping
-    raise "mapping not implemented"
-  end
-  
-  def call(k)
-    ret = nil
-    $keyboard.each_with_index do |row, r|
-      row.each_with_index do |key, c|
-        if key == k.chr.downcase then
-          ret = note_to_pitch(mapping[r][c])
-        end
-      end
-    end
-    return ret
-  end
-end
-
-class LowToHigh
-  def to_s
-    "Low-to-high"
-  end
-  
-  def call(k)
-    ret = nil
-    $keyboard.each_with_index do |row, r|
-      row.each_with_index do |key, c|
-        if key == k.chr.downcase then
-          ret = $base + c * 4 + r
-        end
-      end
-    end
-    return ret
-  end
-end
-
-class ScaleLayout < MappingLayout
-  def to_s
-    "Scale"
-  end
-  
-  def mapping
-    [
-      [:b4, :cs5, :ds5, :f5, :fs5, :fs5, :fs5, :gs5, :as5, :c6, :cs6, :ds6],
-      [:c5, :d5, :e5, :f5, :g5, :f5, :g5, :a5, :b5, :c6, :d6, :e6],
-      [:b3, :cs4, :ds4, :f4, :fs4, :fs4, :fs4, :gs4, :as4, :c5, :cs5],
-      [:c4, :d4, :e4, :f4, :g4, :f4, :g4, :a4, :b4, :c5]
-    ].reverse
-  end
-  
-end
-
-class MajorScaleLayout < MappingLayout
-  def to_s
-    "Major Scale"
-  end
-  
-  def mapping
-    [
-      [:c7, :d7, :e7, :f7, :g7, :f7, :g7, :a7, :b7, :c8, :d8, :e8],
-      [:c6, :d6, :e6, :f6, :g6, :f6, :g6, :a6, :b6, :c7, :d7, :e7],
-      [:c5, :d5, :e5, :f5, :g5, :f5, :g5, :a5, :b5, :c6, :d6],
-      [:c4, :d4, :e4, :f4, :g4, :f4, :g4, :a4, :b4, :c5]
-    ].reverse
-  end
-end
-
-class PentatonicLayout < MappingLayout
-  def to_s
-    "Pentatonic"
-  end
-  
-  def mapping
-    [
-      [:e6, :g6, :a6, :c7, :d7, :e7, :g7, :a7, :c8, :d8, :e8, :g8, :a8],
-      [:g5, :a5, :c6, :d6, :e6, :g6, :a6, :c7, :d7, :e7, :g7, :a7],
-      [:a4, :c5, :d5, :e5, :g5, :a5, :c6, :d6, :e6, :g6, :a6],
-      [:c4, :d4, :e4, :g4, :a4, :c5, :d5, :e5, :g5, :a5]
-    ].reverse
-  end
-end
-
-
-  
 class MidiChannel
   def initialize(real_channel, index)
     @channel = real_channel
@@ -238,10 +71,11 @@ class KeyboardDisplay < java.awt.Component
   def initialize(app)
     super()
     @app = app
+    @row_offsets = [0, 0, 0.6, 1, 1.4]
   end
   
   def getPreferredSize
-    java.awt.Dimension.new(600, 400)
+    java.awt.Dimension.new(720, 400)
   end
   
   def scale(num)
@@ -253,24 +87,35 @@ class KeyboardDisplay < java.awt.Component
     g.scale(sx, sy) if sx > 0
     gap = 5
     round = 5
-    width = height = 42.7
-    $keyboard.reverse.each_with_index do |row_chars, row|
-      row_chars.each_with_index do |char, col|
-        x = gap + (row * width / 2) + col * (width + gap)
-        y = gap + row * (height + gap)
+    width = 42.7
+    height = width
+    @app.key_mapper.keyboard.each_with_index do |row_chars, row|
+      row_offset = @row_offsets[row] * width
+      key_height = row == 0 ? height * 0.6 : height
+      key_width = row == 0 ? width * 1.05 : width
+      row_chars.each_with_index do |k, col|
+        x = gap + col * (key_width + gap) + row_offset
+        y = row == 0 ? gap : gap + (row - 1) * (height + gap) + (height * 0.6 + gap)
         rect = java.awt.geom.RoundRectangle2D::Double.new(
-          x, y, width, height, round, round)
+           x, y, key_width, key_height, round, round)
         
-        code = char[0]
+        key = @app.key_mapper.key(k)
         
-        if @app.current_notes.include?(code)
+        if @app.current_notes.include?(k)
           org_color = g.color
-          g.color = java.awt.Color.new(188, 188, 188)
+          g.color = Color.new(188, 188, 188)
           g.fill(rect)
           g.color = org_color
+        else
+          if @app.split_keyboard and @app.left_hand?(key)
+            org_color = g.color
+            g.color = Color.new(220, 220, 220)
+            g.fill(rect)
+            g.color = org_color
+          end
         end
         g.draw(rect)
-        note = @app.note_for_char(code)
+        note = @app.note_for_key(key)
         if note
           g.drawString(note.name, x + gap, y + gap + gap * 2)
         end
@@ -288,7 +133,7 @@ class KeyboardSection
     @app = app
     @current_channel = channel
     @current_layout = @app.layouts.first
-    @offset_octaves = 0
+    @pitch_offset = 0
   end
   
   def create_controls
@@ -328,17 +173,17 @@ class KeyboardSection
   end
   
   def octave_up
-    @offset_octaves += 1
+    @pitch_offset += 12
     offset_octaves_changed
   end
   
   def octave_down
-    @offset_octaves -= 1
+    @pitch_offset -= 12
     offset_octaves_changed
   end
   
-  def pitch_for(char)
-    @current_layout.call(char) + (@offset_octaves * 12)
+  def pitch_for(key)
+    @current_layout.call(key) + @pitch_offset
   end
   
   def actionPerformed(event)
@@ -354,14 +199,13 @@ class KeyboardSection
   
   def stateChanged(event)
     if event.source == @offset_spinner
-      @offset_octaves = @offset_spinner.value
+      @pitch_offset = @offset_spinner.value
       offset_octaves_changed
     end
   end
   
   def offset_octaves_changed
-    @offset_spinner.value = @offset_octaves
-    #@offset_label.text = @offset_octaves.to_s
+    @offset_spinner.value = @pitch_offset
     @app.keyboard.repaint
   end
   
@@ -385,7 +229,7 @@ class PlayedNote
   def name
     octave = @pitch / 12
     note_interval = @pitch % 12
-    note = $note_intervals_inverted[note_interval]
+    note = NoteLayouts::NOTE_INTERVALS_INVERTED[note_interval]
     return "#{note.upcase}#{octave}"
   end
 end
@@ -396,12 +240,9 @@ class App
   include java.awt.event.ActionListener
   include java.awt.event.MouseWheelListener
   attr_accessor :current_notes, :channels, :layouts
-  attr_accessor :loaded_instruments, :keyboard
+  attr_accessor :loaded_instruments, :keyboard, :key_mapper, :split_keyboard
   def initialize
-    @layouts = [
-      ChromaticLayout.new, ScaleLayout.new, 
-      WholeToneLayout.new, PentatonicLayout.new,
-      LowToHigh.new, MajorScaleLayout.new]
+    @layouts = NoteLayouts::ALL.map{|c|c.new}
       
     @split_keyboard = false
     
@@ -409,6 +250,12 @@ class App
     @last_wheel_moved = nil
     
     @amplitude = 0
+    
+    @key_mapper = KeyMapper::Mapper.new(KeyMapper::QWERTY)
+    
+    @wind_mode = true
+    
+    @volume = 65
     
     initialize_synth
     
@@ -427,15 +274,23 @@ class App
       data_line = AudioSystem.getLine(data_line_info)
       data_line.open
       data_line.start
-      array_size = 100
+      array_size = 15
       bytes = Array.java_array :byte, array_size
       while true
         begin
-          bytes_read = data_line.read(bytes, 0, array_size)
-          value = bytes.map{|b|b.abs}.avg
-          avg_window = avg_window[1..avg_window_size-1] + [value]
-          @amplitude = avg_window.avg
-          amplitude_changed
+          if @wind_mode
+            bytes_read = data_line.read(bytes, 0, array_size)
+            value = bytes.map{|b|b.abs}.avg
+            avg_window = avg_window[1..avg_window_size-1] + [value]
+            @amplitude = avg_window.avg
+            amplitude_changed
+          else
+            amp = 90
+            if @amplitude != amp
+              @amplitude = amp
+              amplitude_changed
+            end
+          end
         rescue => e
           puts e
         end
@@ -447,11 +302,51 @@ class App
     [@first_keyboard, @second_keyboard]
   end
   
+  def blow_threshold
+    65
+  end
+  
   def amplitude_changed
-    @amplitude_label.text = @amplitude.to_s
-    volume = (@amplitude - 1.0) / 5.0 * 127.0
+    #puts "amplitude: #{@amplitude}"
+    @volume = Math.log(@amplitude) / 4 * 127
+    
+    #@amplitude_label.text = @volume.to_s
+    if @wind_mode
+      if @volume == 0
+        keyboards.each do |kb|
+          kb.current_channel.allNotesOff
+        end
+        current_notes.keys.each do |key|
+          current_notes[key] = nil
+        end
+      elsif @volume >= blow_threshold
+        changed = false
+        current_notes.each do |key, note|
+          if note.nil?
+            note = note_for_key(key_mapper.key(key))
+            #puts "playing #{note}"
+            current_notes[key] = note
+            changed = true
+            note.keyboard.current_channel.noteOn(note.pitch, velocity)
+          end
+        end
+        current_notes_changed if changed
+      end
+    end
+    #puts "volume: #{volume}"
+    sync_volume
+  end
+  
+  def sync_volume
     keyboards.each do |kb|
-      kb.current_channel.controlChange(7, volume)
+      kb.current_channel.controlChange(7, @volume)
+    end
+  end
+  
+  def all_notes_off
+    @current_notes = {}
+    keyboards.each do |kb|
+      kb.current_channel.allNotesOff
     end
   end
   
@@ -465,6 +360,7 @@ class App
     panel = JPanel.new
     panel.layout = BorderLayout.new
       controls_panel = JPanel.new
+      controls_panel.layout = GridLayout.new(1,2)
       
         controls_panel.add(@first_keyboard.create_controls)
         controls_panel.add(@second_keyboard.create_controls)
@@ -474,8 +370,26 @@ class App
       @keyboard = KeyboardDisplay.new(self)
       panel.add(@keyboard, BorderLayout::CENTER)
       
-      @amplitude_label = JLabel.new
-      panel.add(@amplitude_label, BorderLayout::SOUTH)
+      
+      bottom_panel = JPanel.new
+        @split_keyboard_cb = JCheckBox.new
+        @split_keyboard_cb.focusable = false
+        @split_keyboard_cb.selected = @split_keyboard
+        bottom_panel.add(JLabel.new("Split Keyboard?"))
+        bottom_panel.add(@split_keyboard_cb)
+        @split_keyboard_cb.addActionListener(self)
+        
+        @wind_mode_cb = JCheckBox.new
+        @wind_mode_cb.focusable = false
+        @wind_mode_cb.selected = @wind_mode
+        bottom_panel.add(JLabel.new("Wind Mode?"))
+        bottom_panel.add(@wind_mode_cb)
+        @wind_mode_cb.addActionListener(self)
+        
+        @amplitude_label = JLabel.new
+        bottom_panel.add(@amplitude_label)
+        
+      panel.add(bottom_panel, BorderLayout::SOUTH)
       
     @frame.add(panel)
     @first_keyboard.offset_octaves_changed
@@ -497,12 +411,33 @@ class App
     @channels = @synth.channels.enum_for(:each_with_index).map{|c, i| MidiChannel.new(c, i)}
   end
   
+  def main_keyboard
+    @split_keyboard ? @second_keyboard : @first_keyboard
+  end
+  
   def octave_up
-    @second_keyboard.octave_up
+    main_keyboard.octave_up
   end
   
   def octave_down
-    @second_keyboard.octave_down
+    main_keyboard.octave_down
+  end
+  
+  def actionPerformed(event)
+    if event.source == @split_keyboard_cb
+      @split_keyboard = @split_keyboard_cb.selected
+      split_keyboard_changed
+    elsif event.source == @wind_mode_cb
+      @wind_mode = @wind_mode_cb.selected
+      wind_mode_changed
+    end
+  end
+  
+  def wind_mode_changed
+  end
+  
+  def split_keyboard_changed
+    @keyboard.repaint
   end
   
   def mouseWheelMoved(event)
@@ -525,37 +460,27 @@ class App
   def windowOpened(event);end
   
   def windowDeactivated(event)
-    @first_keyboard.current_channel.allNotesOff
-    @second_keyboard.current_channel.allNotesOff
-    @current_notes = {}
+    all_notes_off
   end
   
   def current_notes_changed
     @keyboard.repaint
   end
   
-  def left_hand?(char)
-    pos = char_pos(char)
-    return pos[0] >= 2 ? pos[1] <= 5 : pos[1] <= 4
+  def left_hand?(key)
+    return key.row >= 2 ? key.col <= 6 : key.col <= 5
   end
   
-  def note_for_char(char)
-    begin
-      keyboard = left_hand?(char) ? @first_keyboard : @second_keyboard
-      pitch = keyboard.pitch_for(char)
-      return PlayedNote.new(keyboard, pitch)
-    rescue => e
-      puts "error #{e}"
-      return nil
-    end
-  end
-  
-  def note_for_event(event)
-    note_for_char(event.getKeyChar)
+  def note_for_key(key)
+    keyboard = @split_keyboard ?
+      (left_hand?(key) ? @first_keyboard : @second_keyboard) :
+      @first_keyboard
+    pitch = keyboard.pitch_for(key)
+    return PlayedNote.new(keyboard, pitch)
   end
   
   def velocity
-    66
+    65
   end
   
   def keyPressed(event)
@@ -565,24 +490,34 @@ class App
     elsif key_code == 40 # down arrow
       octave_down
     else
-      key_char = event.getKeyChar
-      note = note_for_event(event)
+      key = key_mapper.key_for_event(event)
+      note = note_for_key(key)
       return if note.nil?
-      if not @current_notes.include?(key_char)
-        @current_notes[key_char] = note
+      if not @current_notes.include?(key.symbol)
+        if @wind_mode
+          if @volume >= blow_threshold
+            @current_notes[key.symbol] = note
+          else
+            @current_notes[key.symbol] = nil
+          end
+        else
+          @current_notes[key.symbol] = note
+        end
         current_notes_changed
-        note.keyboard.current_channel.noteOn(note.pitch, velocity)
+        if @current_notes[key.symbol]
+          note.keyboard.current_channel.noteOn(note.pitch, velocity)
+        end  
       end
     end
   end
   
   def keyReleased(event)
-    key_char = event.getKeyChar
-    note = @current_notes[key_char]
-    return if note.nil?
-    @current_notes.delete(key_char)
+    key = key_mapper.key_for_event(event)
+    return if not @current_notes.include?(key.symbol)
+    note = @current_notes[key.symbol]
+    @current_notes.delete(key.symbol)
     current_notes_changed
-    note.keyboard.current_channel.noteOff(note.pitch, velocity)
+    note.keyboard.current_channel.noteOff(note.pitch, velocity) if note
   end
   
   def keyTyped(event);end
