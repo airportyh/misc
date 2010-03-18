@@ -1,0 +1,14 @@
+iframe{
+  width: 600px;
+  height: 400px;
+  -webkit-transform-origin: 100px 100px;
+  -webkit-transform: skewX(30deg) scaleX(0.8);
+  z-index: 0;
+}
+
+#blocker{
+  height: 100%;
+  width: 100%;
+  position: absolute;
+  z-index: 2;
+}
