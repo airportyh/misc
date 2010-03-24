@@ -337,6 +337,18 @@ class App
     sync_volume
   end
   
+  def pedal_down
+    keyboards.each do |kb|
+      kb.current_channel.controlChange(64, 127)
+    end
+  end
+  
+  def pedal_up
+    keyboards.each do |kb|
+      kb.current_channel.controlChange(64, 0)
+    end
+  end
+  
   def sync_volume
     keyboards.each do |kb|
       kb.current_channel.controlChange(7, @volume)
@@ -489,6 +501,8 @@ class App
       octave_up
     elsif key_code == 40 # down arrow
       octave_down
+    elsif key_code == 32 #space
+      pedal_down
     else
       key = key_mapper.key_for_event(event)
       note = note_for_key(key)
@@ -512,6 +526,10 @@ class App
   end
   
   def keyReleased(event)
+    key_code = event.getKeyCode
+    if key_code == 32
+      pedal_up
+    end
     key = key_mapper.key_for_event(event)
     return if not @current_notes.include?(key.symbol)
     note = @current_notes[key.symbol]
