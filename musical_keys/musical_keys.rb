@@ -33,7 +33,7 @@ DataLineInfo = javax.sound.sampled.DataLine::Info
 TargetDataLine = javax.sound.sampled.TargetDataLine
 AudioSystem = javax.sound.sampled.AudioSystem
 AudioFileFormat = javax.sound.sampled.AudioFileFormat
-
+MidiSystem = javax.sound.midi.MidiSystem
 
 class MidiChannel
   def initialize(real_channel, index)
@@ -415,7 +415,8 @@ class App
   end
   
   def initialize_synth
-    @synth = javax.sound.midi.MidiSystem.synthesizer
+    @synth = MidiSystem.synthesizer
+    @receiver = MidiSystem.receiver
     @synth.open
     @soundbank = @synth.defaultSoundbank
     @synth.loadAllInstruments(@soundbank)

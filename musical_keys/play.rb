@@ -4,7 +4,7 @@ include HighLine::SystemExtensions
 require 'midiator'
 midi = MIDIator::Interface.new
 midi.autodetect_driver
-midi.use('dls_synth')
+#midi.use('dls_synth')
 qwerty = [
 '1234567890-='.scan(/./),
 'qwertyuiop[]'.scan(/./),
