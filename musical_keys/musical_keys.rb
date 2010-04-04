@@ -34,6 +34,7 @@ TargetDataLine = javax.sound.sampled.TargetDataLine
 AudioSystem = javax.sound.sampled.AudioSystem
 AudioFileFormat = javax.sound.sampled.AudioFileFormat
 MidiSystem = javax.sound.midi.MidiSystem
+ShortMessage = javax.sound.midi.ShortMessage
 
 class MidiChannel
   def initialize(real_channel, index)
@@ -253,9 +254,11 @@ class App
     
     @key_mapper = KeyMapper::Mapper.new(KeyMapper::QWERTY)
     
-    @wind_mode = true
+    @wind_mode = false
     
     @volume = 65
+    
+    @use_garage_band = true
     
     initialize_synth
     
@@ -337,30 +340,7 @@ class App
     sync_volume
   end
   
-  def pedal_down
-    keyboards.each do |kb|
-      kb.current_channel.controlChange(64, 127)
-    end
-  end
-  
-  def pedal_up
-    keyboards.each do |kb|
-      kb.current_channel.controlChange(64, 0)
-    end
-  end
-  
-  def sync_volume
-    keyboards.each do |kb|
-      kb.current_channel.controlChange(7, @volume)
-    end
-  end
-  
-  def all_notes_off
-    @current_notes = {}
-    keyboards.each do |kb|
-      kb.current_channel.allNotesOff
-    end
-  end
+
   
   def initialize_frame
     @frame = JFrame.new('Musical Keys')
@@ -496,6 +476,76 @@ class App
     65
   end
   
+
+  
+  def noteOn(pitch, velocity)
+    if @use_garage_band
+      msg = ShortMessage.new
+      msg.setMessage(ShortMessage::NOTE_ON, 1, pitch, velocity)
+      @receiver.send(msg, -1)
+    else
+      note.keyboard.current_channel.noteOn(note.pitch, velocity)
+    end
+  end
+  
+  def noteOff(pitch, velocity)
+    if @use_garage_band
+      msg = ShortMessage.new
+      msg.setMessage(ShortMessage::NOTE_OFF, 1, pitch, velocity)
+      @receiver.send(msg, -1)
+    else
+      note.keyboard.current_channel.noteOff(note.pitch, velocity)
+    end
+  end
+
+  def pedal_down
+    if @use_garage_band
+      msg = ShortMessage.new
+      msg.setMessage(ShortMessage::CONTROL_CHANGE, 1, 64, 127)
+      @receiver.send(msg, -1)
+    else
+    
+      keyboards.each do |kb|
+        kb.current_channel.controlChange(64, 127)
+      end
+    end
+    
+  end
+  
+  def pedal_up
+    if @use_garage_band
+      msg = ShortMessage.new
+      msg.setMessage(ShortMessage::CONTROL_CHANGE, 1, 64, 0)
+      @receiver.send(msg, -1)
+    else
+    
+      keyboards.each do |kb|
+        kb.current_channel.controlChange(64, 0)
+      end
+    end
+  end
+  
+  def sync_volume
+    keyboards.each do |kb|
+      kb.current_channel.controlChange(7, @volume)
+    end
+  end
+  
+  def all_notes_off
+    @current_notes = {}
+    
+    # not working
+    if @user_garage_band
+      msg = ShortMessage.new
+      msg.setMessage(ShortMessage::CONTROL_CHANGE, 1, 120, 0)
+      @receiver.send(msg, -1)
+    else
+      keyboards.each do |kb|
+        kb.current_channel.allNotesOff
+      end
+    end
+  end
+
   def keyPressed(event)
     key_code = event.getKeyCode
     if key_code == 38 # up arrow
@@ -520,7 +570,7 @@ class App
         end
         current_notes_changed
         if @current_notes[key.symbol]
-          note.keyboard.current_channel.noteOn(note.pitch, velocity)
+          noteOn(note.pitch, velocity)
         end  
       end
     end
@@ -536,7 +586,8 @@ class App
     note = @current_notes[key.symbol]
     @current_notes.delete(key.symbol)
     current_notes_changed
-    note.keyboard.current_channel.noteOff(note.pitch, velocity) if note
+    noteOff(note.pitch, velocity) if note
+    
   end
   
   def keyTyped(event);end
