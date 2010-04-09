@@ -1,7 +1,9 @@
 #editor{
-  -moz-column-width: 40em;
-  -webkit-column-width: 40em;
+  -moz-column-width: 25em;
+  -webkit-column-width: 25em;
   -moz-column-gap: 1em;
   -webkit-column-gap: 1em;
+  font-size: 12px;
   font-family: Monospace;
+  height: 480px;
 }
