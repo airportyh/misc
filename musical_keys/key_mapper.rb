@@ -17,6 +17,20 @@ module KeyMapper
     ['SHIFT', ';', 'Q', 'J', 'K', 'X', 'B', 'M', 'W', 'V', 'Z', 'SHIFT' ]
   ]
   
+  SHIFT_MAP = {
+    '<' => ',',
+    '>' => '.',
+    '"' => "'",
+    '~' => '`',
+    '{' => '[',
+    '}' => ']',
+    '?' => '/',
+    '+' => '=',
+    '_' => '-',
+    '|' => '\\',
+    ':' => ';'
+  }
+  
   #DVORAK = [
   #  ['ESCAPE', 'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12' ],
   #  ['`', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '[', ']', 'BACK_SPACE' ],
@@ -68,9 +82,17 @@ module KeyMapper
       @code_map[code]
     end
 
+    def shift(chr)
+      if SHIFT_MAP.has_key?(chr)
+        return SHIFT_MAP[chr]
+      else
+        return chr.upcase
+      end
+    end
+
     def key_char(char)
       if (char == 65535) then nil
-      else char.chr.upcase
+      else shift(char.chr)
       end
     end
 

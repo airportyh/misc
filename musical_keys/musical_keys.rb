@@ -252,7 +252,7 @@ class App
     
     @amplitude = 0
     
-    @key_mapper = KeyMapper::Mapper.new(KeyMapper::QWERTY)
+    @key_mapper = KeyMapper::Mapper.new(KeyMapper::DVORAK)
     
     @wind_mode = false
     
@@ -265,7 +265,7 @@ class App
     @first_keyboard = KeyboardSection.new("Left Hand", self, @channels[0])
     @second_keyboard = KeyboardSection.new("Right Hand", self, @channels[1])
     initialize_frame
-    track_microphone_amplitude
+    #track_microphone_amplitude
   end
 
   def track_microphone_amplitude
@@ -548,6 +548,7 @@ class App
 
   def keyPressed(event)
     key_code = event.getKeyCode
+    #puts "down #{key_code}"
     if key_code == 38 # up arrow
       octave_up
     elsif key_code == 40 # down arrow
@@ -578,6 +579,7 @@ class App
   
   def keyReleased(event)
     key_code = event.getKeyCode
+    #print "up #{key_code}"
     if key_code == 32
       pedal_up
     end
