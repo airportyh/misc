@@ -12,7 +12,6 @@ function Class(parent){
     var ret = function(){
       var args = toArray(arguments)
       args.splice(0, 0, obj)
-      //sys.puts('args: ' + args.join(','))
       return func.apply(undefined, args)
     }
     return ret
@@ -35,19 +34,17 @@ function Class(parent){
 }
 
 var Man = Class(Object)({
-	__init__: function(self, name){
-		self.name = name
-	},
-	greeting: function(self, other){
-	  //sys.puts('self: ' + self.name)
-	  setTimeout(function(){
-	    self.say("Hello, " + other.name + ", my name is " + self.name)
-	  }, 100)
-		
-	},
-	say: function(self, msg){
-		sys.puts(msg)
-	}
+  __init__: function(self, name){
+    self.name = name
+  },
+  greeting: function(self, other){
+    setTimeout(function(){
+      self.say("Hello, " + other.name + ", my name is " + self.name)
+    }, 100)
+  },
+  say: function(self, msg){
+    sys.puts(msg)
+  }
 })
 
 var dan = new Man('Dan')
