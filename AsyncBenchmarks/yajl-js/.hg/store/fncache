@@ -1,0 +1,12 @@
+data/.hgignore.i
+data/LICENSE.i
+data/Makefile.i
+data/README.txt.i
+data/doc/README.txt.i
+data/src/callbacks.cc.i
+data/src/callbacks.h.i
+data/src/yajl.cc.i
+data/src/yajl.h.i
+data/src/yajl.js.i
+data/test.js.i
+data/wscript.i

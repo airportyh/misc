@@ -1,0 +1,11 @@
+syntax: glob
+
+.lock-wscript
+yajl.node
+build/.wafpickle-7
+build/config.log
+build/default/src/yajl_1.o
+build/c4che
+build/default/src/binding_yajl.node
+build/default/src/callbacks_1.o
+src/binding_yajl.node
