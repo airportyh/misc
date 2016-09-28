@@ -39,7 +39,10 @@ class Object(object):
             return func
         else:
             return val
-            
+
+    def __getitem__(this, name):
+        return Object.__getattribute__(this, name)
+
     def __setattr__(this, name, val):
         if not isinstance(val, property):
             _val = _proto_getattr(this, name)
